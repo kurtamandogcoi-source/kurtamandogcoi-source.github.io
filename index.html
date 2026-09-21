@@ -261,7 +261,34 @@
 
   footer { padding: 28px clamp(20px,5vw,40px); font-family: var(--mono); font-size: 12px; color: var(--comment); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; max-width: 1080px; margin: 0 auto; }
 
-  /* Chat widget */
+  /* ---------------------------------------------------
+     CUSTOM RESPONSIVE CHAT CONTAINER 
+     (Gamitin mo ito kung ililipat mo ang widget sa iframe)
+     --------------------------------------------------- */
+  .chat-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 100%;
+    max-width: 400px;
+    height: 80vh;
+    max-height: 600px;
+    z-index: 9999;
+  }
+
+  /* Media query para sa mobile view */
+  @media (max-width: 480px) {
+    .chat-container {
+      bottom: 0;
+      right: 0;
+      width: 100%;
+      height: 100vh;
+      max-width: 100%;
+      border-radius: 0;
+    }
+  }
+
+  /* Built-in Chat widget styles mo */
   #kaiBtn {
     position: fixed;
     bottom: calc(22px + env(safe-area-inset-bottom, 0px));
@@ -629,7 +656,6 @@
   <span>Last updated Sep 10, 2026</span>
 </footer>
 
-
 <script>
   const navToggle = document.getElementById('navToggle');
   const navlinks = document.getElementById('navlinks');
@@ -678,9 +704,9 @@
   }, {threshold:0.4});
   bars.forEach(b=>barObserver.observe(b));
 
-  
-
 </script>
-  <!-- This site is converting visitors into subscribers and customers with https://respond.io --><script id="respondio__widget" src="https://cdn.respond.io/webchat/widget/widget.js?cId=dd044f9b4dbe851b7a0bdf6ef9c5986"></script><!-- https://respond.io -->
+  <!-- This site is converting visitors into subscribers and customers with https://respond.io -->
+  <script id="respondio__widget" src="https://cdn.respond.io/webchat/widget/widget.js?cId=dd044f9b4dbe851b7a0bdf6ef9c5986"></script>
+  <!-- https://respond.io -->
 </body>
 </html>
