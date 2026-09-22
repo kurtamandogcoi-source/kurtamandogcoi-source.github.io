@@ -696,7 +696,7 @@
   }
   animateCounters();
 
-  // Typewriter effect on the hero name and role line — types out on open, then hands off to the glitch layers
+  // Typewriter effect on the hero role line only — the name stays static
   (function(){
     const nameEl = document.getElementById('heroName');
     const cursor = document.getElementById('heroCursor');
@@ -706,7 +706,10 @@
     const fullText = nameEl.dataset.text || nameEl.textContent;
     const roleText = roleEl ? (roleEl.dataset.text || '') : '';
 
-    function typeInto(el, text, cursorEl, speedMin, speedMax, onDone){
+    nameEl.textContent = fullText;
+    if(cursor) cursor.remove();
+
+    function typeInto(el, text, cursorEl, speedMin, speedMax){
       let i = 0;
       (function tick(){
         i++;
@@ -715,32 +718,20 @@
           setTimeout(tick, speedMin + Math.random()*speedMax);
         } else if(cursorEl){
           cursorEl.classList.add('done');
-          if(onDone) onDone();
-        } else if(onDone) onDone();
+        }
       })();
     }
 
     if(reduceMotion){
-      nameEl.textContent = fullText;
-      if(cursor) cursor.remove();
       if(roleEl){ roleEl.textContent = roleText; }
       if(roleCursor) roleCursor.remove();
       return;
     }
 
-    if(roleEl) roleEl.textContent = '';
-    nameEl.textContent = '';
-    nameEl.classList.add('typing');
-    setTimeout(function(){
-      typeInto(nameEl, fullText, cursor, 55, 55, function(){
-        nameEl.classList.remove('typing');
-        if(roleEl){
-          setTimeout(function(){
-            typeInto(roleEl, roleText, roleCursor, 12, 14);
-          }, 250);
-        }
-      });
-    }, 300);
+    if(roleEl){
+      roleEl.textContent = '';
+      setTimeout(function(){ typeInto(roleEl, roleText, roleCursor, 12, 14); }, 300);
+    }
   })();
 
   const bars = document.querySelectorAll('.bar-fill');
