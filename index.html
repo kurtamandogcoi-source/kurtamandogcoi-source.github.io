@@ -47,8 +47,8 @@
   
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 clamp(20px,5vw,40px); }
-  section { padding: 96px 0; border-bottom: 1px solid var(--border); }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 clamp(18px,5vw,40px); }
+  section { padding: clamp(56px,10vw,96px) 0; border-bottom: 1px solid var(--border); }
   .eyebrow { font-family: var(--mono); font-size: 12.5px; color: var(--comment); letter-spacing: .03em; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
   .eyebrow .num { color: var(--blue); }
   h2 { font-family: var(--mono); font-size: clamp(22px,3vw,30px); color: var(--fg-bright); margin: 0 0 34px; font-weight: 600; }
@@ -79,7 +79,7 @@
     .navlinks.open a { padding: 12px 24px; border-top: 1px solid var(--border); }
   }
 
-  .hero { padding: 110px 0 80px; border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
+  .hero { padding: clamp(72px,14vw,110px) 0 clamp(56px,10vw,80px); border-bottom: 1px solid var(--border); position: relative; overflow: hidden; }
   .hero::before {
     content: ""; position: absolute; inset: 0;
     background: radial-gradient(600px 300px at 20% 0%, rgba(97,175,239,.15), transparent 60%);
@@ -90,6 +90,8 @@
     0% { opacity: 0.6; transform: scale(0.95); }
     100% { opacity: 1; transform: scale(1.05); }
   }
+  #heroNet { position: absolute; inset: 0; width: 100%; height: 100%; display: block; opacity: .55; pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { #heroNet { display: none; } }
 
   .hero-eyebrow { font-family: var(--mono); font-size: 14px; color: var(--cyan); margin-bottom: 18px; }
   
@@ -155,6 +157,7 @@
     67% { transform: skew(-1deg); }
   }
 
+  .hero .wrap { position: relative; z-index: 1; }
   .hero-grid { display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; }
   .hero-role { font-size: clamp(15px,2vw,18px); color: var(--fg); max-width: 56ch; margin-bottom: 32px; }
   .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 56px; }
@@ -261,34 +264,7 @@
 
   footer { padding: 28px clamp(20px,5vw,40px); font-family: var(--mono); font-size: 12px; color: var(--comment); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; max-width: 1080px; margin: 0 auto; }
 
-  /* ---------------------------------------------------
-     CUSTOM RESPONSIVE CHAT CONTAINER 
-     (Gamitin mo ito kung ililipat mo ang widget sa iframe)
-     --------------------------------------------------- */
-  .chat-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 100%;
-    max-width: 400px;
-    height: 80vh;
-    max-height: 600px;
-    z-index: 9999;
-  }
-
-  /* Media query para sa mobile view */
-  @media (max-width: 480px) {
-    .chat-container {
-      bottom: 0;
-      right: 0;
-      width: 100%;
-      height: 100vh;
-      max-width: 100%;
-      border-radius: 0;
-    }
-  }
-
-  /* Built-in Chat widget styles mo */
+  /* Chat widget */
   #kaiBtn {
     position: fixed;
     bottom: calc(22px + env(safe-area-inset-bottom, 0px));
@@ -367,6 +343,21 @@
     font-family: var(--mono); font-size: 13px; touch-action: manipulation; flex-shrink: 0;
   }
   .kai-input-row button:disabled { opacity: .5; cursor: default; }
+
+  @media (max-width: 600px) {
+    .field-row { grid-template-columns: 1fr; gap: 4px; }
+    .field-key { padding-top: 2px; }
+    .stat-row { grid-template-columns: repeat(2,1fr); gap: 16px 20px; }
+    .soft-list { grid-template-columns: 1fr; }
+    .timeline { padding-left: 22px; }
+    .t-item::before { left: -22px; }
+    .hero-actions .btn { flex: 1 1 auto; text-align: center; }
+    .cap-card, .proj-card, .simple-card, .term { padding-left: 18px; padding-right: 18px; }
+  }
+  @media (max-width: 380px) {
+    .stat-row { grid-template-columns: 1fr 1fr; }
+    .navlinks.open a { padding: 12px 20px; }
+  }
 </style>
 </head>
 <body>
@@ -387,6 +378,7 @@
 </nav>
 
 <header class="hero" id="hero">
+  <canvas id="heroNet" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="hero-grid">
       <div>
@@ -656,6 +648,7 @@
   <span>Last updated Sep 10, 2026</span>
 </footer>
 
+
 <script>
   const navToggle = document.getElementById('navToggle');
   const navlinks = document.getElementById('navlinks');
@@ -704,9 +697,81 @@
   }, {threshold:0.4});
   bars.forEach(b=>barObserver.observe(b));
 
+  // Live network graphic in the hero — nodes drifting and linking, echoing a system/database diagram
+  (function(){
+    const canvas = document.getElementById('heroNet');
+    const heroEl = document.getElementById('hero');
+    if(!canvas || reduceMotion) return;
+    const ctx = canvas.getContext('2d');
+    let w, h, dpr, nodes, raf, running = true;
+
+    function sizeCanvas(){
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = heroEl.clientWidth; h = heroEl.clientHeight;
+      canvas.width = w * dpr; canvas.height = h * dpr;
+      canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+
+    function makeNodes(){
+      const isSmall = w < 640;
+      const count = Math.max(10, Math.min(26, Math.round((w*h)/(isSmall ? 26000 : 17000))));
+      nodes = Array.from({length: count}, ()=> ({
+        x: Math.random()*w, y: Math.random()*h,
+        vx: (Math.random()-0.5)*0.18, vy: (Math.random()-0.5)*0.18,
+        r: Math.random()*1.4 + 1
+      }));
+    }
+
+    function step(){
+      if(!running){ raf = requestAnimationFrame(step); return; }
+      ctx.clearRect(0,0,w,h);
+      const linkDist = w < 640 ? 110 : 150;
+      for(const n of nodes){
+        n.x += n.vx; n.y += n.vy;
+        if(n.x < 0 || n.x > w) n.vx *= -1;
+        if(n.y < 0 || n.y > h) n.vy *= -1;
+      }
+      for(let i=0;i<nodes.length;i++){
+        for(let j=i+1;j<nodes.length;j++){
+          const a = nodes[i], b = nodes[j];
+          const dx = a.x-b.x, dy = a.y-b.y;
+          const dist = Math.sqrt(dx*dx+dy*dy);
+          if(dist < linkDist){
+            ctx.strokeStyle = `rgba(97,175,239,${(1 - dist/linkDist) * 0.22})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+          }
+        }
+      }
+      for(const n of nodes){
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(86,182,194,0.55)';
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(step);
+    }
+
+    sizeCanvas(); makeNodes(); raf = requestAnimationFrame(step);
+
+    let resizeT;
+    window.addEventListener('resize', ()=>{
+      clearTimeout(resizeT);
+      resizeT = setTimeout(()=>{ sizeCanvas(); makeNodes(); }, 150);
+    });
+
+    const visObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{ running = entry.isIntersecting; });
+    }, {threshold: 0});
+    visObserver.observe(heroEl);
+
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.hidden) running = false;
+    });
+  })();
+
 </script>
-  <!-- This site is converting visitors into subscribers and customers with https://respond.io -->
-  <script id="respondio__widget" src="https://cdn.respond.io/webchat/widget/widget.js?cId=dd044f9b4dbe851b7a0bdf6ef9c5986"></script>
-  <!-- https://respond.io -->
+  <!-- This site is converting visitors into subscribers and customers with https://respond.io --><script id="respondio__widget" src="https://cdn.respond.io/webchat/widget/widget.js?cId=dd044f9b4dbe851b7a0bdf6ef9c5986"></script><!-- https://respond.io -->
 </body>
 </html>
