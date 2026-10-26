@@ -849,6 +849,10 @@
 })();
 </script> <!-- ADD THIS MISSING TAG HERE -->
 
+ <script>
+(function(){if(!window.chatbase||window.chatbase("getState")!=="initialized"){window.chatbase=(...arguments)=>{if(!window.chatbase.q){window.chatbase.q=[]}window.chatbase.q.push(arguments)};window.chatbase=new Proxy(window.chatbase,{get(target,prop){if(prop==="q"){return target.q}return(...args)=>target(prop,...args)}})}const onLoad=function(){const script=document.createElement("script");script.src="https://www.chatbase.co/embed.min.js";script.id="GIp_fb3LyAPu8D4Fcm2LK";script.domain="www.chatbase.co";document.body.appendChild(script)};if(document.readyState==="complete"){onLoad()}else{window.addEventListener("load",onLoad)}})();
+</script> 
+
 
 <!-- This site is converting visitors into subscribers and customers with https://respond.io -->
 <script id="respondio__widget" src="https://cdn.respond.io/webchat/widget/widget.js?cId=890abc0bce5d947f3a0aec477818c8f"></script>
